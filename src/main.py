@@ -1,15 +1,41 @@
 import flet as ft
 import dir_control
+from PIL import Image
+import numpy as np
+import cv2
+import base64
+
+def img_read(file_path, flags = cv2.IMREAD_COLOR, dtype = np.uint8):
+    try:
+        arr = np.fromfile(file_path, dtype)
+        img = cv2.imdecode(arr, flags)
+        return img
+    except Exception as e:
+        print(e)
+        return None
+
+def to_base64(img):
+    base64_img = base64.b64encode(cv2.imencode('.png', img)[1]).decode()
+    return base64_img
+    
 
 
-def main(page: ft.Page):    
+def main(page: ft.Page):
+        
+    # ===== Windows settings ===== #
+    page.title = "ImgConverterDesktop"
+    page.window.width = 800
+    page.window.height = 600
+    page.padding = 20
+    # ============================ #
+    
     dir_control.make_dir("input")
     dir_control.make_dir("out")
     
-    page.title = "ImgConverterDesktop"
-    page.window.width = 400
-    page.window.height = 300
-    page.padding = 20
+    init_img = np.zeros((480, 640, 3), dtype = np.uint8) + 128
+    init_base64_img = to_base64(init_img)
+    
+    img_src = ft.Image(src_base64 = init_base64_img, width = 640, height = 480)
     
     uploaded_file_name_text = ft.Text()
     
@@ -18,6 +44,13 @@ def main(page: ft.Page):
         if e.files:
             uploaded_file_name_text.value = e.files[0].name
             uploaded_file_name_text.update()
+            
+            uploaded_file_path = e.files[0].path
+            print(f"file selected : {uploaded_file_path}")
+            img = img_read(uploaded_file_path)
+            base64_img = to_base64(img)
+            img_src.src_base64 = base64_img
+            img_src.update()
 
 
     uploaded_file_dialog = ft.FilePicker(on_result = on_file_selected)
@@ -57,10 +90,16 @@ def main(page: ft.Page):
                     "Open the file",
                     icon = ft.icons.UPLOAD_FILE,
                     on_click = lambda _: uploaded_file_dialog.pick_files(
-                        allow_multiple = False
+                        allow_multiple = False,
+                        file_type = ft.FilePickerFileType.IMAGE 
                     )
                 ),
                 uploaded_file_name_text,
+            ]
+        ),
+        ft.Row(
+            [
+                img_src
             ]
         ),
         ft.Row(
