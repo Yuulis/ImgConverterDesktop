@@ -1,3 +1,4 @@
+import asyncio
 import flet as ft
 import dir_control
 from PIL import Image
@@ -18,6 +19,12 @@ def img_read(file_path, flags = cv2.IMREAD_COLOR, dtype = np.uint8):
 def to_base64(img):
     base64_img = base64.b64encode(cv2.imencode('.png', img)[1]).decode()
     return base64_img
+
+async def print_log(page, log_area, msg):
+    await asyncio.sleep(0.1)
+    
+    log_area.controls.append(ft.Text(msg))
+    page.update()
     
 
 
@@ -40,14 +47,21 @@ def main(page: ft.Page):
     
     uploaded_file_name_text = ft.Text()
     
+    log_area = ft.ListView(
+        expand = True,
+        spacing = 5,
+        padding = 10,
+        auto_scroll = True
+    )
     
-    def on_file_selected(e: ft.FilePickerResultEvent):
+    
+    async def on_file_selected(e: ft.FilePickerResultEvent):
         if e.files:
             uploaded_file_name_text.value = e.files[0].name
             uploaded_file_name_text.update()
             
             uploaded_file_path = e.files[0].path
-            print(f"file selected : {uploaded_file_path}")
+            await print_log(page, log_area, f"file selected : {uploaded_file_path}")
             img = img_read(uploaded_file_path)
             base64_img = to_base64(img)
             img_src.src_base64 = base64_img
@@ -62,6 +76,10 @@ def main(page: ft.Page):
 
     uploaded_file_dialog = ft.FilePicker(on_result = on_file_selected)
     page.overlay.append(uploaded_file_dialog)
+    
+    
+    async def on_download_button_click(e):
+        await print_log(page, log_area, "Download button clicked")
     
     
     page.add(
@@ -113,10 +131,12 @@ def main(page: ft.Page):
             [
                 ft.ElevatedButton(
                     "Download the file",
-                    icon = ft.icons.DOWNLOAD
+                    icon = ft.icons.DOWNLOAD,
+                    on_click = lambda _: asyncio.run(on_download_button_click(None))
                 )
             ]
         ),
+        log_area
     )
 
 
