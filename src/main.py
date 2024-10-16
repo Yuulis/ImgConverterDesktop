@@ -4,6 +4,7 @@ from PIL import Image
 import numpy as np
 import cv2
 import base64
+import os
 
 def img_read(file_path, flags = cv2.IMREAD_COLOR, dtype = np.uint8):
     try:
@@ -32,10 +33,10 @@ def main(page: ft.Page):
     dir_control.make_dir("input")
     dir_control.make_dir("out")
     
-    init_img = np.zeros((480, 640, 3), dtype = np.uint8) + 128
+    init_img = np.zeros((180, 240, 3), dtype = np.uint8) + 128
     init_base64_img = to_base64(init_img)
     
-    img_src = ft.Image(src_base64 = init_base64_img, width = 640, height = 480)
+    img_src = ft.Image(src_base64 = init_base64_img, width = 240, height = 180)
     
     uploaded_file_name_text = ft.Text()
     
@@ -51,6 +52,12 @@ def main(page: ft.Page):
             base64_img = to_base64(img)
             img_src.src_base64 = base64_img
             img_src.update()
+            
+            fig = Image.open(uploaded_file_path)
+            fig_type = fig.mode
+            
+            fig = fig.convert("RGB")
+            fig.save(f"./out/{os.path.splitext(os.path.basename(uploaded_file_path))[0]}.eps", lossless = True)
 
 
     uploaded_file_dialog = ft.FilePicker(on_result = on_file_selected)
