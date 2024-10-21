@@ -5,8 +5,79 @@ from PIL import Image
 import numpy as np
 import cv2
 import base64
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
 import flet as ft
 import dir_control
+
+
+class FileWatcher():
+    def __init__(self, page, log_area, img_src):
+        self.observer = Observer()
+        self.page = page
+        self.log_area = log_area
+        self.img_src = img_src
+        
+    def run(self, watch_dir_path):
+        event_handler = FileChangeHandler(self.page, self.log_area, self.img_src)
+        self.observer.schedule(event_handler, watch_dir_path, recursive=True)
+        self.observer.start()
+        try:
+            while True:
+                time.sleep(1)
+        except:
+            self.observer.stop()
+            print("File watcher has Stopped.")
+
+        self.observer.join()
+
+
+class FileChangeHandler(FileSystemEventHandler):
+    def __init__(self, page, log_area, img_src):
+        self.page = page
+        self.log_area = log_area
+        self.img_src = img_src
+
+    def on_created(self, event):
+        if event.is_directory:
+            return None
+        else:
+            file_path = event.src_path
+            file_name = os.path.basename(file_path)
+            print(f"created : {file_name}")
+            asyncio.run(img_convert(self.page, self.log_area, self.img_src, event.src_path))
+            
+    def on_modified(self, event):
+        file_path = event.src_path
+        file_name = os.path.basename(file_path)
+        print(f"modified: {file_name}")
+        
+    def on_deleted(self, event):
+        file_path = event.src_path
+        file_name = os.path.basename(file_path)
+        print(f"deleted: {file_name}")
+        
+    def on_moved(self, event):
+        file_path = event.src_path
+        file_name = os.path.basename(file_path)
+        print(f"moved: {file_name}")        
+
+
+async def img_convert(page, log_area, img_src, file_path):
+    await print_log(page, log_area, f"file loaded : {file_path}")
+    
+    img = img_read(file_path)
+    base64_img = to_base64(img)
+    img_src.src_base64 = base64_img
+    img_src.update()
+            
+    fig = Image.open(file_path)
+    fig_type = fig.mode
+            
+    fig = fig.convert("RGB")
+    fig.save(f"./out/{os.path.splitext(os.path.basename(file_path))[0]}.eps", lossless = True)
+    await print_log(page, log_area, f"Successfully converted to {os.path.splitext(os.path.basename(file_path))[0]}.eps")
+
 
 def img_read(file_path, flags = cv2.IMREAD_COLOR, dtype = np.uint8):
     try:
@@ -17,9 +88,11 @@ def img_read(file_path, flags = cv2.IMREAD_COLOR, dtype = np.uint8):
         print(e)
         return None
 
+
 def to_base64(img):
     base64_img = base64.b64encode(cv2.imencode('.png', img)[1]).decode()
     return base64_img
+
 
 async def print_log(page, log_area, msg):
     await asyncio.sleep(0.1)
@@ -27,7 +100,6 @@ async def print_log(page, log_area, msg):
     log_area.controls.append(ft.Text(msg))
     page.update()
     
-
 
 def main(page: ft.Page):
     # ===== Windows Settings ===== #
@@ -62,6 +134,7 @@ def main(page: ft.Page):
             
             uploaded_file_path = e.files[0].path
             await print_log(page, log_area, f"file selected : {uploaded_file_path}")
+            img_src = page.img_src
             img = img_read(uploaded_file_path)
             base64_img = to_base64(img)
             img_src.src_base64 = base64_img
@@ -128,18 +201,8 @@ def main(page: ft.Page):
     )
     
     # ===== File Watcher ===== #
-    event_handler = dir_control.FileChangeHandler()
-    observer = dir_control.Observer()
-    observer.schedule(event_handler, "./input", recursive = True)
-    observer.start()
-    
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        observer.stop()
-        
-    observer.join()
+    watcher = FileWatcher(page, log_area, img_src)
+    watcher.run("input")
     # ========================= # 
 
 
