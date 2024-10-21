@@ -11,6 +11,7 @@ import flet as ft
 import dir_control
 
 
+# File Watcher class
 class FileWatcher():
     def __init__(self, page, log_area, img_src):
         self.observer = Observer()
@@ -20,18 +21,20 @@ class FileWatcher():
         
     def run(self, watch_dir_path):
         event_handler = FileChangeHandler(self.page, self.log_area, self.img_src)
-        self.observer.schedule(event_handler, watch_dir_path, recursive=True)
+        self.observer.schedule(event_handler, watch_dir_path, recursive = True)
         self.observer.start()
+        
         try:
             while True:
                 time.sleep(1)
         except:
             self.observer.stop()
-            print("File watcher has Stopped.")
+            asyncio.run(print_log(self.page, self.log_area, "File Watcher stopped."))
 
         self.observer.join()
 
 
+# File Change Handler class
 class FileChangeHandler(FileSystemEventHandler):
     def __init__(self, page, log_area, img_src):
         self.page = page
@@ -43,42 +46,35 @@ class FileChangeHandler(FileSystemEventHandler):
             return None
         else:
             file_path = event.src_path
-            file_name = os.path.basename(file_path)
-            print(f"created : {file_name}")
-            asyncio.run(img_convert(self.page, self.log_area, self.img_src, event.src_path))
-            
-    def on_modified(self, event):
-        file_path = event.src_path
-        file_name = os.path.basename(file_path)
-        print(f"modified: {file_name}")
-        
-    def on_deleted(self, event):
-        file_path = event.src_path
-        file_name = os.path.basename(file_path)
-        print(f"deleted: {file_name}")
-        
-    def on_moved(self, event):
-        file_path = event.src_path
-        file_name = os.path.basename(file_path)
-        print(f"moved: {file_name}")        
+            img_convert(self.page, self.log_area, self.img_src, event.src_path)
 
 
-async def img_convert(page, log_area, img_src, file_path):
-    await print_log(page, log_area, f"file loaded : {file_path}")
+# Convert image file
+def img_convert(page, log_area, img_src, file_path):
+    asyncio.new_event_loop().run_in_executor(
+        None, 
+        print_log(page, log_area, f"Loaded : {file_path}")
+    )
     
     img = img_read(file_path)
     base64_img = to_base64(img)
     img_src.src_base64 = base64_img
     img_src.update()
             
-    fig = Image.open(file_path)
-    fig_type = fig.mode
-            
+    fig = Image.open(file_path) 
+              
+    # for converting .eps
     fig = fig.convert("RGB")
+    
     fig.save(f"./out/{os.path.splitext(os.path.basename(file_path))[0]}.eps", lossless = True)
-    await print_log(page, log_area, f"Successfully converted to {os.path.splitext(os.path.basename(file_path))[0]}.eps")
+    
+    asyncio.new_event_loop().run_in_executor(
+        None, 
+        print_log(page, log_area, f"Successfully converted to {os.path.splitext(os.path.basename(file_path))[0]}.eps")
+    )
 
 
+# Read image file
 def img_read(file_path, flags = cv2.IMREAD_COLOR, dtype = np.uint8):
     try:
         arr = np.fromfile(file_path, dtype)
@@ -88,15 +84,14 @@ def img_read(file_path, flags = cv2.IMREAD_COLOR, dtype = np.uint8):
         print(e)
         return None
 
-
+# Convert image to base64
 def to_base64(img):
     base64_img = base64.b64encode(cv2.imencode('.png', img)[1]).decode()
     return base64_img
 
 
-async def print_log(page, log_area, msg):
-    await asyncio.sleep(0.1)
-    
+# Display log message to log_area
+def print_log(page, log_area, msg):
     log_area.controls.append(ft.Text(msg))
     page.update()
     
@@ -109,16 +104,19 @@ def main(page: ft.Page):
     page.padding = 20
     # ============================ #
     
+    # ===== Create dirextory to save image files ===== #
     dir_control.make_dir("input")
     dir_control.make_dir("out")   
+    # ================================================= #
     
+    # ===== Initialize preview image ===== #
     init_img = np.zeros((180, 240, 3), dtype = np.uint8) + 128
     init_base64_img = to_base64(init_img)
-    
     img_src = ft.Image(src_base64 = init_base64_img, width = 240, height = 180)
+    # ===================================== #
     
-    uploaded_file_name_text = ft.Text()
-    
+    # ===== Controls ===== #    
+    # Log area
     log_area = ft.ListView(
         expand = True,
         spacing = 5,
@@ -126,32 +124,23 @@ def main(page: ft.Page):
         auto_scroll = True
     )
     
-    
-    async def on_file_selected(e: ft.FilePickerResultEvent):
-        if e.files:
-            uploaded_file_name_text.value = e.files[0].name
-            uploaded_file_name_text.update()
-            
+    # File picker dialog
+    def on_file_selected(e: ft.FilePickerResultEvent):
+        if e.files:            
             uploaded_file_path = e.files[0].path
-            await print_log(page, log_area, f"file selected : {uploaded_file_path}")
-            img_src = page.img_src
-            img = img_read(uploaded_file_path)
-            base64_img = to_base64(img)
-            img_src.src_base64 = base64_img
-            img_src.update()
+            asyncio.new_event_loop().run_in_executor(
+                None, 
+                print_log(page, log_area, f"file selected : {uploaded_file_path}")
+            )
             
-            fig = Image.open(uploaded_file_path)
-            fig_type = fig.mode
-            
-            fig = fig.convert("RGB")
-            fig.save(f"./out/{os.path.splitext(os.path.basename(uploaded_file_path))[0]}.eps", lossless = True)
-            await print_log(page, log_area, f"Successfully converted to {os.path.splitext(os.path.basename(uploaded_file_path))[0]}.eps")
+            img_convert(page, log_area, img_src, uploaded_file_path)
 
 
     uploaded_file_dialog = ft.FilePicker(on_result = on_file_selected)
     page.overlay.append(uploaded_file_dialog)
+    # =================== #
     
-    
+    # Add controls to the page
     page.add(
         ft.Row(
             [
@@ -188,8 +177,7 @@ def main(page: ft.Page):
                         allow_multiple = False,
                         file_type = ft.FilePickerFileType.IMAGE 
                     )
-                ),
-                uploaded_file_name_text,
+                )
             ]
         ),
         ft.Row(
