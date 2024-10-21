@@ -1,11 +1,12 @@
+import os
 import asyncio
-import flet as ft
-import dir_control
+import time
 from PIL import Image
 import numpy as np
 import cv2
 import base64
-import os
+import flet as ft
+import dir_control
 
 def img_read(file_path, flags = cv2.IMREAD_COLOR, dtype = np.uint8):
     try:
@@ -29,8 +30,7 @@ async def print_log(page, log_area, msg):
 
 
 def main(page: ft.Page):
-        
-    # ===== Windows settings ===== #
+    # ===== Windows Settings ===== #
     page.title = "ImgConverterDesktop"
     page.window.width = 800
     page.window.height = 600
@@ -38,7 +38,7 @@ def main(page: ft.Page):
     # ============================ #
     
     dir_control.make_dir("input")
-    dir_control.make_dir("out")
+    dir_control.make_dir("out")   
     
     init_img = np.zeros((180, 240, 3), dtype = np.uint8) + 128
     init_base64_img = to_base64(init_img)
@@ -72,14 +72,11 @@ def main(page: ft.Page):
             
             fig = fig.convert("RGB")
             fig.save(f"./out/{os.path.splitext(os.path.basename(uploaded_file_path))[0]}.eps", lossless = True)
+            await print_log(page, log_area, f"Successfully converted to {os.path.splitext(os.path.basename(uploaded_file_path))[0]}.eps")
 
 
     uploaded_file_dialog = ft.FilePicker(on_result = on_file_selected)
     page.overlay.append(uploaded_file_dialog)
-    
-    
-    async def on_download_button_click(e):
-        await print_log(page, log_area, "Download button clicked")
     
     
     page.add(
@@ -127,17 +124,23 @@ def main(page: ft.Page):
                 img_src
             ]
         ),
-        ft.Row(
-            [
-                ft.ElevatedButton(
-                    "Download the file",
-                    icon = ft.icons.DOWNLOAD,
-                    on_click = lambda _: asyncio.run(on_download_button_click(None))
-                )
-            ]
-        ),
         log_area
     )
+    
+    # ===== File Watcher ===== #
+    event_handler = dir_control.FileChangeHandler()
+    observer = dir_control.Observer()
+    observer.schedule(event_handler, "./input", recursive = True)
+    observer.start()
+    
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        observer.stop()
+        
+    observer.join()
+    # ========================= # 
 
 
 ft.app(main)
