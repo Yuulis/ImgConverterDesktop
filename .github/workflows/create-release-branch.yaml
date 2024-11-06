@@ -11,7 +11,7 @@ jobs:
   create-PR:
     runs-on: ubuntu-latest
     env:
-      RELEASE_BRANCH_NAME: release-${{ github.event.inputs.version }}
+      RELEASE_BRANCH_NAME: release/v${{ github.event.inputs.version }}
 
     steps:
       - name: Checkout Repository
@@ -33,7 +33,7 @@ jobs:
         run: gem install --no-document git-pr-release -v "2.2.0"
 
       - name: Create PR for Release
-        run: git-pr-release --squashed
+        run: git-pr-release
         env:
           GIT_PR_RELEASE_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GIT_PR_RELESE_BRANCH_PRODUCTION: main
