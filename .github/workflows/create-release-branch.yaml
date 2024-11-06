@@ -1,17 +1,17 @@
 name: Create Release Branch and PR
 
 on:
-    workflow_dispatch:
-        inputs:
-            version:
-                description: 'Version to release'
-                required: true
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release'
+        required: true
 
 jobs:
   create-PR:
     runs-on: ubuntu-latest
     env:
-      RELEASE_BRANCH_NAME: release/v${{ github.event.inputs.version }}
+      RELEASE_BRANCH_NAME: release/${{ github.event.inputs.version }}
 
     steps:
       - name: Checkout Repository
