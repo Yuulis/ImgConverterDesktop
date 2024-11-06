@@ -1,0 +1,57 @@
+name: build-flet-app
+on:
+  push:
+    tags:
+      - "v*"
+
+env:
+  BUILD_NUMBER: 1
+  BUILD_VERSION: 0.1.0
+  PYTHON_VERSION: 3.12.2
+  APP_NAME: ImgConverterDesktop
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v4
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          draft: true
+      
+      - name: Setup Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+    
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Flet Pack for Windows
+        run:  flet pack main.py --name ${{ env.APP_NAME }} --add-data "assets;assets" --product-name ${{ env.APP_NAME }} --product-version ${{ env.BUILD_VERSION }}
+
+      - name: Compress Build File
+        run: |
+          powershell Compress-Archive -Path ./dist/* -DestinationPath ./ImgConverterDesktop.zip
+          tree /f
+
+      - name: Upload Release Assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./ImgConverterDesktop.zip
+          asset_name: ${{ env.APP_NAME }}-win-x64.zip
+          asset_content_type: application/zip
