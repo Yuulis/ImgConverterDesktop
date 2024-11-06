@@ -11,11 +11,11 @@ jobs:
   create-PR:
     runs-on: ubuntu-latest
     env:
-      RELEASE_BRANCH_NAME: release/${{ github.event.inputs.version }}
+      RELEASE_BRANCH_NAME: release-${{ github.event.inputs.version }}
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
             
