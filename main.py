@@ -4,7 +4,6 @@ import time
 from io import BytesIO
 from PIL import Image
 import numpy as np
-import cv2
 import base64
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
@@ -68,19 +67,18 @@ def img_convert(page, log_area, img_src, file_path, convert_target):
         None, print_log(page, log_area, f"Loaded : {file_path}")
     )
 
-    fig = Image.open(file_path)
+    img = Image.open(file_path)
     asyncio.new_event_loop().run_in_executor(
-        None, print_log(page, log_area, f"Image type : {fig.format}")
+        None, print_log(page, log_area, f"Image type : {img.format}")
     )
 
-    # img = img_read(file_path)
-    base64_img = to_base64(fig, fig.format)
+    base64_img = to_base64(img, img.format)
     img_src.src_base64 = base64_img
     img_src.update()
 
-    fig = fig.convert("RGB")
+    img = img.convert("RGB")
 
-    fig.save(
+    img.save(
         f"./out/{os.path.splitext(os.path.basename(file_path))[0]}.{convert_target}",
         lossless=True,
     )
@@ -95,17 +93,6 @@ def img_convert(page, log_area, img_src, file_path, convert_target):
     )
 
 
-# Read image file
-def img_read(file_path, flags=cv2.IMREAD_COLOR, dtype=np.uint8):
-    try:
-        arr = np.fromfile(file_path, dtype)
-        img = cv2.imdecode(arr, flags)
-        return img
-    except Exception as e:
-        print(e)
-        return None
-
-
 # Convert image to base64
 def to_base64(img, format):
     if isinstance(img, np.ndarray):
@@ -113,6 +100,7 @@ def to_base64(img, format):
     buffer = BytesIO()
     img.save(buffer, format=format)
     base64_img = base64.b64encode(buffer.getvalue()).decode()
+
     return base64_img
 
 
