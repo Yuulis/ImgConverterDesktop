@@ -7,6 +7,11 @@ on:
         description: 'Version to release'
         required: true
 
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
 jobs:
   create-PR:
     runs-on: ubuntu-latest
