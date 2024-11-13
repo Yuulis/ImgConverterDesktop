@@ -1,9 +1,9 @@
 import os
 import asyncio
 import time
+from io import BytesIO
 from PIL import Image
 import numpy as np
-import cv2
 import base64
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
@@ -20,14 +20,17 @@ def make_dir(path):
 
 # File Watcher class
 class FileWatcher:
-    def __init__(self, page, log_area, img_src):
+    def __init__(self, page, log_area, img_src, dd):
+        self.dd = dd
         self.observer = Observer()
         self.page = page
         self.log_area = log_area
         self.img_src = img_src
 
-    def run(self, watch_dir_path):
-        event_handler = FileChangeHandler(self.page, self.log_area, self.img_src)
+        event_handler = FileChangeHandler(
+            self.page, self.log_area, self.img_src, self.dd
+        )
+        watch_dir_path = "input"  # Define the directory to watch
         self.observer.schedule(event_handler, watch_dir_path, recursive=True)
         self.observer.start()
 
@@ -43,17 +46,19 @@ class FileWatcher:
 
 # File Change Handler class
 class FileChangeHandler(FileSystemEventHandler):
-    def __init__(self, page, log_area, img_src):
+    def __init__(self, page, log_area, img_src, dd):
         self.page = page
         self.log_area = log_area
         self.img_src = img_src
+        self.dd = dd
 
     def on_created(self, event):
         if event.is_directory:
             return None
         else:
-            file_path = event.src_path
-            img_convert(self.page, self.log_area, self.img_src, event.src_path)
+            img_convert(
+                self.page, self.log_area, self.img_src, event.src_path, self.dd.value
+            )
 
 
 # Convert image file
@@ -62,14 +67,18 @@ def img_convert(page, log_area, img_src, file_path, convert_target):
         None, print_log(page, log_area, f"Loaded : {file_path}")
     )
 
-    img = img_read(file_path)
-    base64_img = to_base64(img)
+    img = Image.open(file_path)
+    asyncio.new_event_loop().run_in_executor(
+        None, print_log(page, log_area, f"Image type : {img.format}")
+    )
+
+    base64_img = to_base64(img, img.format)
     img_src.src_base64 = base64_img
     img_src.update()
 
-    fig = Image.open(file_path).convert("RGB")
+    img = img.convert("RGB")
 
-    fig.save(
+    img.save(
         f"./out/{os.path.splitext(os.path.basename(file_path))[0]}.{convert_target}",
         lossless=True,
     )
@@ -84,20 +93,14 @@ def img_convert(page, log_area, img_src, file_path, convert_target):
     )
 
 
-# Read image file
-def img_read(file_path, flags=cv2.IMREAD_COLOR, dtype=np.uint8):
-    try:
-        arr = np.fromfile(file_path, dtype)
-        img = cv2.imdecode(arr, flags)
-        return img
-    except Exception as e:
-        print(e)
-        return None
-
-
 # Convert image to base64
-def to_base64(img):
-    base64_img = base64.b64encode(cv2.imencode(".png", img)[1]).decode()
+def to_base64(img, format):
+    if isinstance(img, np.ndarray):
+        img = Image.fromarray(img)
+    buffer = BytesIO()
+    img.save(buffer, format=format)
+    base64_img = base64.b64encode(buffer.getvalue()).decode()
+
     return base64_img
 
 
@@ -122,7 +125,7 @@ def main(page: ft.Page):
 
     # ===== Initialize preview image ===== #
     init_img = np.zeros((180, 240, 3), dtype=np.uint8) + 128
-    init_base64_img = to_base64(init_img)
+    init_base64_img = to_base64(init_img, "PNG")
     img_src = ft.Image(src_base64=init_base64_img, width=240, height=180)
     # ===================================== #
 
@@ -184,8 +187,7 @@ def main(page: ft.Page):
         log_area,
     )
 
-    # ===== File Watcher ===== #
-    watcher = FileWatcher(page, log_area, img_src)
+    watcher = FileWatcher(page, log_area, img_src, dd)
     watcher.run("input")
     # ========================= #
 
