@@ -185,6 +185,11 @@ def main(page: ft.Page):
         ),
         ft.Row([img_src]),
         log_area,
+        ft.Row(
+            [
+                ft.Text("© 2024 Yuulis", text_align="CENTER"),
+            ]
+        ),
     )
 
     watcher = FileWatcher(page, log_area, img_src, dd)
