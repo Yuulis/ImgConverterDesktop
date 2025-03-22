@@ -1,5 +1,7 @@
 import os
 import flet as ft
+import pillow_heif
+from PIL import Image
 
 APP_NAME = "ImgConverterDesktop"
 WINDOW_WIDTH = 600
@@ -22,6 +24,21 @@ def make_dirs():
         os.makedirs("output")
 
 
+# Convert HEIC file to JPEG
+def convert_heic(file_path, file_base_name):
+    convert_target_file = pillow_heif.read_heif(file_path)
+    for img in convert_target_file:
+        image = Image.frombytes(
+            img.mode,
+            img.size,
+            img.data,
+            "raw",
+            img.mode,
+            img.stride,
+        )
+    image.save(f"output/{file_base_name}.jpg", "JPEG")
+
+
 def main(page: ft.Page):
     app_settings(page, APP_NAME, WINDOW_WIDTH, WINDOW_HEIGHT)
     make_dirs()
@@ -30,7 +47,17 @@ def main(page: ft.Page):
         file_paths = []
         if e.files:
             file_paths = [file.path for file in e.files]
+
+            # Check each file
+            for file_path in file_paths:
+                file_base_name, file_ext = os.path.splitext(os.path.basename(file_path))
+
+                # If the file is HEIC, convert it to JPEG
+                if file_ext == ".heic" or file_ext == ".HEIC":
+                    convert_heic(file_path, file_base_name)
+
             upload_file_path_text.value = "\n".join(file_paths)
+
         upload_file_path_text.update()
 
     pick_files_dialog = ft.FilePicker(on_result=on_file_selected)
