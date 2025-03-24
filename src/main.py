@@ -113,7 +113,12 @@ def main(page: ft.Page):
                 )
             ]
         ),
-        upload_file_path_text,
+        ft.Row([upload_file_path_text]),
+        ft.Row(
+            [
+                ft.Text("© 2025 Yuulis"),
+            ]
+        ),
     )
 
 
