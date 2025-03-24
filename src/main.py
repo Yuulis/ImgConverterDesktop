@@ -25,7 +25,7 @@ def make_dirs():
 
 
 # Convert HEIC file to JPEG
-def convert_heic(file_path, file_base_name):
+def convert_heic(file_path, file_base_name, target_format):
     convert_target_file = pillow_heif.read_heif(file_path)
     for img in convert_target_file:
         image = Image.frombytes(
@@ -36,7 +36,43 @@ def convert_heic(file_path, file_base_name):
             img.mode,
             img.stride,
         )
-    image.save(f"output/{file_base_name}.jpg", "JPEG")
+    image.save(f"output/{file_base_name}.{target_format}")
+
+
+# Dropdown menu for selecting the target format
+dd_target_select = ft.Dropdown(
+    width=150,
+    label="Target Format",
+    autofocus=True,
+    options=[
+        ft.dropdown.Option("blp"),
+        ft.dropdown.Option("bmp"),
+        ft.dropdown.Option("dds"),
+        ft.dropdown.Option("dib"),
+        ft.dropdown.Option("eps"),
+        ft.dropdown.Option("gif"),
+        ft.dropdown.Option("icns"),
+        ft.dropdown.Option("ico"),
+        ft.dropdown.Option("im"),
+        ft.dropdown.Option("jpg"),
+        ft.dropdown.Option("jp2"),
+        ft.dropdown.Option("mpo"),
+        ft.dropdown.Option("msp"),
+        ft.dropdown.Option("pcx"),
+        ft.dropdown.Option("pfm"),
+        ft.dropdown.Option("png"),
+        ft.dropdown.Option("ppm"),
+        ft.dropdown.Option("sgi"),
+        ft.dropdown.Option("spider"),
+        ft.dropdown.Option("tga"),
+        ft.dropdown.Option("tiff"),
+        ft.dropdown.Option("webp"),
+        ft.dropdown.Option("xbm"),
+        ft.dropdown.Option("palm"),
+        ft.dropdown.Option("pdf"),
+        ft.dropdown.Option("xv"),
+    ],
+)
 
 
 def main(page: ft.Page):
@@ -54,7 +90,7 @@ def main(page: ft.Page):
 
                 # If the file is HEIC, convert it to JPEG
                 if file_ext == ".heic" or file_ext == ".HEIC":
-                    convert_heic(file_path, file_base_name)
+                    convert_heic(file_path, file_base_name, dd_target_select.value)
 
             upload_file_path_text.value = "\n".join(file_paths)
 
@@ -65,6 +101,7 @@ def main(page: ft.Page):
     upload_file_path_text = ft.Text()
 
     page.add(
+        ft.Row([ft.Text("Convert target format : "), dd_target_select]),
         ft.Row(
             [
                 ft.ElevatedButton(
