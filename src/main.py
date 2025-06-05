@@ -24,7 +24,8 @@ def make_dirs():
         os.makedirs("output")
 
 
-def convert_img(file_path, target_format):
+# Convert the uploaded image to the target format
+def convert_image(file_path, target_format):
     file_base_name, file_ext = os.path.splitext(os.path.basename(file_path))
 
     # If the file is HEIC, use convert_heic function
@@ -34,7 +35,7 @@ def convert_img(file_path, target_format):
     # If the file is not HEIC, use Pillow to convert it
     else:
         img = Image.open(file_path)
-        img.sace(f"output/{file_base_name}.{target_format}")
+        img.save(f"output/{file_base_name}.{target_format}")
 
 
 # Convert HEIC file to target format
@@ -50,6 +51,20 @@ def convert_heic(file_path, file_base_name, target_format):
             img.stride,
         )
     image.save(f"output/{file_base_name}.{target_format}")
+
+
+# Display a preview image
+def display_preview_image(container, file_path):
+    container.controls.append(
+        ft.Image(
+            src=file_path,
+            width=100,
+            height=100,
+            fit=ft.ImageFit.CONTAIN,
+            repeat=ft.ImageRepeat.NO_REPEAT,
+            border_radius=ft.border_radius.all(10),
+        )
+    )
 
 
 # Dropdown menu for selecting the target format
@@ -99,7 +114,10 @@ def main(page: ft.Page):
 
             # Check each file
             for file_path in file_paths:
-                convert_img(file_path, dd_target_select.value)
+                display_preview_image(uploaded_images, file_path)
+                page.update()
+
+                convert_image(file_path, dd_target_select.value)
 
             upload_file_path_text.value = "\n".join(file_paths)
 
@@ -107,6 +125,13 @@ def main(page: ft.Page):
 
     pick_files_dialog = ft.FilePicker(on_result=on_file_selected)
     page.overlay.append(pick_files_dialog)
+
+    uploaded_images = ft.Row(
+        expand=1,
+        wrap=False,
+        scroll=ft.ScrollMode.ALWAYS,
+    )
+
     upload_file_path_text = ft.Text()
 
     page.add(
@@ -122,6 +147,7 @@ def main(page: ft.Page):
                 )
             ]
         ),
+        ft.Row([uploaded_images]),
         ft.Row([upload_file_path_text]),
         ft.Row(
             [
