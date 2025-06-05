@@ -28,6 +28,10 @@ def make_dirs():
 def convert_image(file_path, target_format):
     file_base_name, file_ext = os.path.splitext(os.path.basename(file_path))
 
+    # Save the original image to the input directory
+    img = Image.open(file_path)
+    img.save(f"input/{file_base_name}{file_ext}")
+
     # If the file is HEIC, use convert_heic function
     if file_ext == ".heic" or file_ext == ".HEIC":
         convert_heic(file_path, file_base_name, dd_target_select.value)
