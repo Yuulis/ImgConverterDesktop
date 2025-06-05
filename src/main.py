@@ -24,7 +24,20 @@ def make_dirs():
         os.makedirs("output")
 
 
-# Convert HEIC file to JPEG
+def convert_img(file_path, target_format):
+    file_base_name, file_ext = os.path.splitext(os.path.basename(file_path))
+
+    # If the file is HEIC, use convert_heic function
+    if file_ext == ".heic" or file_ext == ".HEIC":
+        convert_heic(file_path, file_base_name, dd_target_select.value)
+
+    # If the file is not HEIC, use Pillow to convert it
+    else:
+        img = Image.open(file_path)
+        img.sace(f"output/{file_base_name}.{target_format}")
+
+
+# Convert HEIC file to target format
 def convert_heic(file_path, file_base_name, target_format):
     convert_target_file = pillow_heif.read_heif(file_path)
     for img in convert_target_file:
@@ -86,11 +99,7 @@ def main(page: ft.Page):
 
             # Check each file
             for file_path in file_paths:
-                file_base_name, file_ext = os.path.splitext(os.path.basename(file_path))
-
-                # If the file is HEIC, convert it to JPEG
-                if file_ext == ".heic" or file_ext == ".HEIC":
-                    convert_heic(file_path, file_base_name, dd_target_select.value)
+                convert_img(file_path, dd_target_select.value)
 
             upload_file_path_text.value = "\n".join(file_paths)
 
