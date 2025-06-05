@@ -2,6 +2,7 @@ import os
 import flet as ft
 import pillow_heif
 from PIL import Image
+import subprocess
 
 APP_NAME = "ImgConverterDesktop"
 WINDOW_WIDTH = 600
@@ -111,6 +112,7 @@ def main(page: ft.Page):
     app_settings(page, APP_NAME, WINDOW_WIDTH, WINDOW_HEIGHT)
     make_dirs()
 
+    # Event handler for file selection
     def on_file_selected(e: ft.FilePickerResultEvent):
         file_paths = []
         if e.files:
@@ -126,6 +128,10 @@ def main(page: ft.Page):
             upload_file_path_text.value = "\n".join(file_paths)
 
         upload_file_path_text.update()
+
+    # Event handler for opening the output directory
+    def on_output_dir_opened(e: ft.FilePickerResultEvent):
+        subprocess.Popen(["explorer", r"output"], shell=True)
 
     pick_files_dialog = ft.FilePicker(on_result=on_file_selected)
     page.overlay.append(pick_files_dialog)
@@ -148,7 +154,12 @@ def main(page: ft.Page):
                     on_click=lambda _: pick_files_dialog.pick_files(
                         allow_multiple=True
                     ),
-                )
+                ),
+                ft.ElevatedButton(
+                    text="Open Output Folder",
+                    icon=ft.Icons.FOLDER_OPEN,
+                    on_click=lambda _: on_output_dir_opened(None),
+                ),
             ]
         ),
         ft.Row([uploaded_images]),
