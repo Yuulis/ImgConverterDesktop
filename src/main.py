@@ -34,12 +34,15 @@ def convert_image(file_path, target_format):
     img.save(f"input/{file_base_name}{file_ext}")
 
     # If the file is HEIC, use convert_heic function
-    if file_ext == ".heic" or file_ext == ".HEIC":
+    if file_ext.lower() == ".heic" or file_ext.lower() == ".HEIC":
         convert_heic(file_path, file_base_name, dd_target_select.value)
 
     # If the file is not HEIC, use Pillow to convert it
     else:
         img = Image.open(file_path)
+        # EPS形式の場合はRGBに変換
+        if target_format.lower() == "eps":
+            img = img.convert("RGB")
         img.save(f"output/{file_base_name}.{target_format}")
 
 
