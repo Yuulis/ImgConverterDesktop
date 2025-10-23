@@ -5,8 +5,8 @@ from PIL import Image
 import subprocess
 
 APP_NAME = "ImgConverterDesktop"
-WINDOW_WIDTH = 600
-WINDOW_HEIGHT = 450
+WINDOW_WIDTH = 1200
+WINDOW_HEIGHT = 900
 
 
 # Set the app name and window size
@@ -61,18 +61,62 @@ def convert_heic(file_path, file_base_name, target_format):
     image.save(f"output/{file_base_name}.{target_format}")
 
 
-# Display a preview image
-def display_preview_image(container, file_path):
-    container.controls.append(
-        ft.Image(
-            src=file_path,
-            width=100,
-            height=100,
-            fit=ft.ImageFit.CONTAIN,
-            repeat=ft.ImageRepeat.NO_REPEAT,
-            border_radius=ft.border_radius.all(10),
-        )
+def format_bytes(size: int) -> str:
+    # Human-readable data size (bytes -> KB/MB/GB)
+    for unit in ["bytes", "KB", "MB", "GB", "TB"]:
+        if size < 1024 or unit == "TB":
+            return f"{size:.0f} {unit}" if unit == "bytes" else f"{size:.1f} {unit}"
+        size /= 1024
+
+
+def create_item_controls(file_path: str) -> tuple[ft.Control, dict]:
+    file_name = os.path.basename(file_path)
+
+    img_control = ft.Image(
+        src=None,
+        width=160,
+        height=120,
+        fit=ft.ImageFit.CONTAIN,
+        repeat=ft.ImageRepeat.NO_REPEAT,
+        border_radius=ft.border_radius.all(8),
     )
+
+    name_text = ft.Text(file_name, weight=ft.FontWeight.BOLD)
+    format_text = ft.Text("", color=ft.Colors.GREY_700)
+    dim_text = ft.Text("", color=ft.Colors.GREY_700)
+    size_text = ft.Text("", color=ft.Colors.GREY_700)
+    status_text = ft.Text("", color=ft.Colors.GREY_700)
+    pbar = ft.ProgressBar(width=400, visible=False, value=0)
+
+    item = ft.Container(
+        padding=10,
+        content=ft.Column(
+            tight=True,
+            spacing=6,
+            controls=[
+                img_control,
+                name_text,
+                format_text,
+                dim_text,
+                size_text,
+                pbar,
+                status_text,
+            ],
+        ),
+        border=ft.border.all(1, ft.Colors.GREY_300),
+        border_radius=8,
+    )
+
+    refs = {
+        "image": img_control,
+        "format_text": format_text,
+        "dim_text": dim_text,
+        "size_text": size_text,
+        "status_text": status_text,
+        "pbar": pbar,
+    }
+
+    return item, refs
 
 
 # Dropdown menu for selecting the target format
@@ -80,6 +124,7 @@ dd_target_select = ft.Dropdown(
     width=150,
     label="Target Format",
     autofocus=True,
+    value="png",
     options=[
         ft.dropdown.Option("blp"),
         ft.dropdown.Option("bmp"),
@@ -117,20 +162,99 @@ def main(page: ft.Page):
 
     # Event handler for file selection
     def on_file_selected(e: ft.FilePickerResultEvent):
-        file_paths = []
-        if e.files:
-            file_paths = [file.path for file in e.files]
+        if not e.files:
+            return
 
-            # Check each file
-            for file_path in file_paths:
-                display_preview_image(uploaded_images, file_path)
+        file_paths = [file.path for file in e.files]
+
+        # Process each file with per-item progress and status
+        for file_path in file_paths:
+            # Create UI item and add to list
+            item, refs = create_item_controls(file_path)
+            image_list.controls.append(item)
+            page.update()
+
+            # 1) 画像読み込み開始 -> 2) プログレスバー表示
+            refs["status_text"].value = "Loading..."
+            refs["status_text"].color = ft.Colors.GREY_700
+            refs["pbar"].visible = True
+            refs["pbar"].value = 0
+            page.update()
+
+            # Try loading image and gathering metadata
+            loading_failed = False
+            width = height = None
+            src_fmt = None
+            try:
+                with Image.open(file_path) as im:
+                    width, height = im.size
+                    src_fmt = im.format
+            except Exception:
+                # Try HEIC size via pillow_heif as fallback
+                try:
+                    heif = pillow_heif.read_heif(file_path)
+                    first = None
+                    for img in heif:
+                        first = img
+                        break
+                    if first is not None:
+                        width, height = first.size
+                        src_fmt = "HEIC"
+                except Exception:
+                    loading_failed = True
+
+            # File size (data size)
+            try:
+                file_size = os.path.getsize(file_path)
+                refs["size_text"].value = f"Data size: {format_bytes(file_size)}"
+            except Exception:
+                refs["size_text"].value = "Data size: -"
+
+            # Show source -> target format info (even if may fail)
+            ext = os.path.splitext(file_path)[1].lstrip(".")
+            src_disp = (src_fmt or ext or "?").upper()
+            tgt_disp = (
+                (dd_target_select.value or "-").upper()
+                if dd_target_select.value
+                else "-"
+            )
+            refs["format_text"].value = f"{src_disp} -> {tgt_disp}"
+
+            if loading_failed or width is None or height is None:
+                refs["pbar"].visible = False
+                refs["status_text"].value = "Loading Failed"
+                refs["status_text"].color = ft.Colors.RED_600
                 page.update()
+                # Skip conversion if loading failed
+                continue
 
-                convert_image(file_path, dd_target_select.value)
+            # 3) 画像読み込み完了、画像データの表示
+            refs["image"].src = file_path
+            refs["dim_text"].value = f"{width} x {height} px"
+            refs["pbar"].visible = False
+            refs["status_text"].value = ""
+            page.update()
 
-            upload_file_path_text.value = "\n".join(file_paths)
+            # 4) 画像形式変換開始 -> 5) プログレスバー表示
+            refs["status_text"].value = "Converting..."
+            refs["status_text"].color = ft.Colors.GREY_700
+            refs["pbar"].visible = True
+            refs["pbar"].value = 0
+            page.update()
 
-        upload_file_path_text.update()
+            # Convert
+            try:
+                if dd_target_select.value:
+                    convert_image(file_path, dd_target_select.value)
+                # 6) 成功ステータス表示
+                refs["status_text"].value = "Success"
+                refs["status_text"].color = ft.Colors.GREEN_600
+            except Exception:
+                refs["status_text"].value = "Conversion Failed"
+                refs["status_text"].color = ft.Colors.RED_600
+            finally:
+                refs["pbar"].visible = False
+                page.update()
 
     # Event handler for opening the output directory
     def on_output_dir_opened(e: ft.FilePickerResultEvent):
@@ -139,13 +263,13 @@ def main(page: ft.Page):
     pick_files_dialog = ft.FilePicker(on_result=on_file_selected)
     page.overlay.append(pick_files_dialog)
 
-    uploaded_images = ft.Row(
+    # Scrollable vertical list of items (image + file name + size)
+    image_list = ft.ListView(
         expand=1,
-        wrap=False,
-        scroll=ft.ScrollMode.ALWAYS,
+        spacing=10,
+        padding=10,
+        auto_scroll=False,
     )
-
-    upload_file_path_text = ft.Text()
 
     page.add(
         ft.Row([ft.Text("Convert target format : "), dd_target_select]),
@@ -165,13 +289,8 @@ def main(page: ft.Page):
                 ),
             ]
         ),
-        ft.Row([uploaded_images]),
-        ft.Row([upload_file_path_text]),
-        ft.Row(
-            [
-                ft.Text("© 2025 Yuulis"),
-            ]
-        ),
+        image_list,
+        ft.Row([ft.Text("© 2025 Yuulis")]),
     )
 
 
