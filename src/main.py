@@ -3,6 +3,7 @@ import flet as ft
 import pillow_heif
 from PIL import Image
 import subprocess
+from utils import make_dirs, convert_image, format_bytes
 
 APP_NAME = "ImgConverterDesktop"
 WINDOW_WIDTH = 800
@@ -16,12 +17,7 @@ def app_settings(page, app_name, width, height):
     page.window.height = height
 
 
-from utils import make_dirs, convert_image, format_bytes
-
-
-# format_bytes is imported from utils
-
-
+# Create UI controls for a single image item
 def create_item_controls(file_path: str) -> tuple[ft.Control, dict]:
     file_name = os.path.basename(file_path)
 
@@ -127,7 +123,14 @@ def main(page: ft.Page):
             image_list.controls.append(item)
             page.update()
 
-            # 1) 画像読み込み開始 -> 2) プログレスバー表示
+            """
+            1. Start loading image
+            2. Show progress bar
+            3. Image loaded, show image data
+            4. Start conversion
+            5. Show progress bar
+            6. Show success status
+            """
             refs["status_text"].value = "Loading..."
             refs["status_text"].color = ft.Colors.GREY_700
             refs["pbar"].visible = True
@@ -156,7 +159,7 @@ def main(page: ft.Page):
                 except Exception:
                     loading_failed = True
 
-            # File size (data size)
+            # File data size
             try:
                 file_size = os.path.getsize(file_path)
                 refs["size_text"].value = f"Data size: {format_bytes(file_size)}"
@@ -181,14 +184,13 @@ def main(page: ft.Page):
                 # Skip conversion if loading failed
                 continue
 
-            # 3) 画像読み込み完了、画像データの表示
+            # Display image info
             refs["image"].src = file_path
             refs["dim_text"].value = f"{width} x {height} px"
             refs["pbar"].visible = False
             refs["status_text"].value = ""
             page.update()
 
-            # 4) 画像形式変換開始 -> 5) プログレスバー表示
             refs["status_text"].value = "Converting..."
             refs["status_text"].color = ft.Colors.GREY_700
             refs["pbar"].visible = True
@@ -199,7 +201,6 @@ def main(page: ft.Page):
             try:
                 if dd_target_select.value:
                     convert_image(file_path, dd_target_select.value)
-                # 6) 成功ステータス表示
                 refs["status_text"].value = "Success"
                 refs["status_text"].color = ft.Colors.GREEN_600
             except Exception:
