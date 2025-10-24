@@ -5,8 +5,8 @@ from PIL import Image
 import subprocess
 
 APP_NAME = "ImgConverterDesktop"
-WINDOW_WIDTH = 1200
-WINDOW_HEIGHT = 900
+WINDOW_WIDTH = 800
+WINDOW_HEIGHT = 600
 
 
 # Set the app name and window size
@@ -16,57 +16,10 @@ def app_settings(page, app_name, width, height):
     page.window.height = height
 
 
-# Make directories to store the uploaded and converted files
-def make_dirs():
-    if not os.path.exists("input"):
-        os.makedirs("input")
-
-    if not os.path.exists("output"):
-        os.makedirs("output")
+from utils import make_dirs, convert_image, format_bytes
 
 
-# Convert the uploaded image to the target format
-def convert_image(file_path, target_format):
-    file_base_name, file_ext = os.path.splitext(os.path.basename(file_path))
-
-    # Save the original image to the input directory
-    img = Image.open(file_path)
-    img.save(f"input/{file_base_name}{file_ext}")
-
-    # If the file is HEIC, use convert_heic function
-    if file_ext.lower() == ".heic" or file_ext.lower() == ".HEIC":
-        convert_heic(file_path, file_base_name, dd_target_select.value)
-
-    # If the file is not HEIC, use Pillow to convert it
-    else:
-        img = Image.open(file_path)
-        # EPS形式の場合はRGBに変換
-        if target_format.lower() == "eps":
-            img = img.convert("RGB")
-        img.save(f"output/{file_base_name}.{target_format}")
-
-
-# Convert HEIC file to target format
-def convert_heic(file_path, file_base_name, target_format):
-    convert_target_file = pillow_heif.read_heif(file_path)
-    for img in convert_target_file:
-        image = Image.frombytes(
-            img.mode,
-            img.size,
-            img.data,
-            "raw",
-            img.mode,
-            img.stride,
-        )
-    image.save(f"output/{file_base_name}.{target_format}")
-
-
-def format_bytes(size: int) -> str:
-    # Human-readable data size (bytes -> KB/MB/GB)
-    for unit in ["bytes", "KB", "MB", "GB", "TB"]:
-        if size < 1024 or unit == "TB":
-            return f"{size:.0f} {unit}" if unit == "bytes" else f"{size:.1f} {unit}"
-        size /= 1024
+# format_bytes is imported from utils
 
 
 def create_item_controls(file_path: str) -> tuple[ft.Control, dict]:
@@ -88,20 +41,20 @@ def create_item_controls(file_path: str) -> tuple[ft.Control, dict]:
     status_text = ft.Text("", color=ft.Colors.GREY_700)
     pbar = ft.ProgressBar(width=400, visible=False, value=0)
 
+    # Image on the left, details on the right
+    details_col = ft.Column(
+        tight=True,
+        spacing=4,
+        controls=[name_text, format_text, dim_text, size_text, pbar, status_text],
+        expand=True,
+    )
+
     item = ft.Container(
         padding=10,
-        content=ft.Column(
-            tight=True,
-            spacing=6,
-            controls=[
-                img_control,
-                name_text,
-                format_text,
-                dim_text,
-                size_text,
-                pbar,
-                status_text,
-            ],
+        content=ft.Row(
+            controls=[img_control, details_col],
+            spacing=12,
+            vertical_alignment=ft.CrossAxisAlignment.START,
         ),
         border=ft.border.all(1, ft.Colors.GREY_300),
         border_radius=8,
@@ -272,7 +225,12 @@ def main(page: ft.Page):
     )
 
     page.add(
-        ft.Row([ft.Text("Convert target format : "), dd_target_select]),
+        ft.Row(
+            [
+                ft.Text("Convert target format : ", size=20, weight=ft.FontWeight.BOLD),
+                dd_target_select,
+            ]
+        ),
         ft.Row(
             [
                 ft.ElevatedButton(
@@ -290,7 +248,7 @@ def main(page: ft.Page):
             ]
         ),
         image_list,
-        ft.Row([ft.Text("© 2025 Yuulis")]),
+        ft.Row([ft.Text("© 2025 Yuulis")], alignment=ft.MainAxisAlignment.CENTER),
     )
 
 
