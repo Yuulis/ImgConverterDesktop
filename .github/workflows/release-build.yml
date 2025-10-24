@@ -6,7 +6,7 @@ on:
       - "ver.*"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   validate:
@@ -107,3 +107,43 @@ jobs:
           name: ImgConverterDesktop-${{ needs.validate.outputs.version }}-${{ matrix.target }}
           path: build/${{ matrix.target }}/**
           if-no-files-found: error
+
+  release:
+    name: Create GitHub Release and upload assets
+    needs: [validate, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: List downloaded artifacts
+        run: |
+          echo "Downloaded artifacts:" 
+          ls -la artifacts
+
+      - name: Zip per-target artifacts
+        run: |
+          mkdir -p artifacts-zip
+          shopt -s nullglob
+          for d in artifacts/*; do
+            if [ -d "$d" ]; then
+              base=$(basename "$d")
+              (cd "$d" && zip -r "../${base}.zip" .)
+              mv "artifacts/${base}.zip" "artifacts-zip/${base}.zip" || true
+            fi
+          done
+          ls -la artifacts-zip
+
+      - name: Create GitHub Release and upload assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.validate.outputs.tag }}
+          name: ImgConverterDesktop ver.${{ needs.validate.outputs.version }}
+          files: |
+            artifacts-zip/*.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
