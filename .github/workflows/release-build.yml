@@ -6,7 +6,7 @@ on:
       - "ver.*"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   validate:
@@ -57,6 +57,9 @@ jobs:
     name: Build (${{ matrix.os }} → ${{ matrix.target }})
     needs: validate
     runs-on: ${{ matrix.os }}
+    env:
+      PYTHONUTF8: "1"
+      PYTHONIOENCODING: "utf-8"
     strategy:
       fail-fast: false
       matrix:
@@ -78,16 +81,22 @@ jobs:
           python-version: '3.11'
           cache: 'pip'
 
-      - name: Install dependencies
+      - name: Install Linux desktop prerequisites
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev
+
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install "flet[all]==0.26.0" Pillow>=10.0.0 pillow-heif>=0.16.0
+          pip install "flet[all]==0.28.3" Pillow>=10.0.0 pillow-heif>=0.16.0
 
       - name: Run unit tests
         run: |
           python -m unittest discover -s tests -p "test_*.py" -v
 
-      - name: Build (flet build)
+      - name: Build (flet build ${{ matrix.target }})
         run: |
           flet --version
           flet build ${{ matrix.target }} --build-version ${{ needs.validate.outputs.version }} --build-number ${{ github.run_number }}
@@ -98,3 +107,43 @@ jobs:
           name: ImgConverterDesktop-${{ needs.validate.outputs.version }}-${{ matrix.target }}
           path: build/${{ matrix.target }}/**
           if-no-files-found: error
+
+  release:
+    name: Create GitHub Release and upload assets
+    needs: [validate, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: List downloaded artifacts
+        run: |
+          echo "Downloaded artifacts:" 
+          ls -la artifacts
+
+      - name: Zip per-target artifacts
+        run: |
+          mkdir -p artifacts-zip
+          shopt -s nullglob
+          for d in artifacts/*; do
+            if [ -d "$d" ]; then
+              base=$(basename "$d")
+              (cd "$d" && zip -r "../${base}.zip" .)
+              mv "artifacts/${base}.zip" "artifacts-zip/${base}.zip" || true
+            fi
+          done
+          ls -la artifacts-zip
+
+      - name: Create GitHub Release and upload assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.validate.outputs.tag }}
+          name: ImgConverterDesktop ver.${{ needs.validate.outputs.version }}
+          files: |
+            artifacts-zip/*.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
