@@ -289,7 +289,7 @@ def main(page: ft.Page):
             ]
         ),
         image_list,
-        ft.Row([ft.Text("© 2025 - 2026 Yuulis")], alignment=ft.MainAxisAlignment.CENTER),
+        ft.Row([ft.Text("© 2026 Yuulis")], alignment=ft.MainAxisAlignment.CENTER),
     )
 
 
