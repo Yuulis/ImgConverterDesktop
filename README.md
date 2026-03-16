@@ -2,7 +2,7 @@
 
 Flet app using Flet extension.
 
-To run the app:
+## Setup
 
 1. Install dependencies from pyproject.toml:
 
@@ -10,14 +10,18 @@ To run the app:
 poetry install
 ```
 
-2. Build app:
+## Run
+
+2. Run app:
 
 ```
-poetry run flet build macos -v
+poetry run flet run src/main.py
 ```
 
-3. Run app:
+## Build
+
+3. Build app (example: Windows desktop):
 
 ```
-poetry run flet run
+poetry run flet build windows -v
 ```
