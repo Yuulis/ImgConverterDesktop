@@ -102,7 +102,7 @@ jobs:
       - name: Build (flet build ${{ matrix.target }})
         run: |
           uv run flet --version
-          uv run flet build ${{ matrix.target }} --build-version ${{ needs.validate.outputs.version }} --build-number ${{ github.run_number }}
+          uv run flet build ${{ matrix.target }} --yes --build-version ${{ needs.validate.outputs.version }} --build-number ${{ github.run_number }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
