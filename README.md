@@ -1,106 +1,41 @@
-# ImgConverterDesktop
+<h1 align="center">ImgConverterDesktop</h1>
 
-[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
-[![Flet](https://img.shields.io/badge/Flet-0.82.2-02569B?style=flat&logo=flutter&logoColor=white)](https://flet.dev/)
-[![Pillow](https://img.shields.io/badge/Pillow-10.0%2B-green?style=flat)](https://python-pillow.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-Windows-0078D4?style=flat&logo=windows&logoColor=white)](https://www.microsoft.com/windows)
 
-[Flet](https://flet.dev/)（Flutter for Python）と [Pillow](https://python-pillow.org/) を使用した、デスクトップ向け画像フォーマット変換アプリです。
+<p align="center">
+<img alt="GitHub Release" src="https://img.shields.io/github/v/release/Yuulis/ImgConverterDesktop">
+<img alt="Python Version from PEP 621 TOML" src="https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2FYuulis%2FImgConverterDesktop%2Frefs%2Fheads%2Fmain%2Fpyproject.toml">
+<img alt="GitHub License" src="https://img.shields.io/github/license/Yuulis/ImgConverterDesktop">
+<img alt="GitHub Actions Workflow Status" src="https://img.shields.io/github/actions/workflow/status/Yuulis/ImgConverterDesktop/release-build.yml">
+
+</p>
+
+シンプルなデスクトップ向け画像形式変換アプリケーション
 
 ## 機能
 
-- PNG / JPEG / WebP / TIFF / GIF / BMP / PDF / ICO / EPS など 24 以上のフォーマットに対応
-- `pillow-heif` による HEIC/HEIF 形式もサポート
-- 変換元・変換先フォーマット、画像サイズ、ファイルサイズを表示するサムネイルプレビュー
-- アプリ上から直接出力フォルダーを開く
-
-## 必要条件
-
-- Python 3.10 以上
-- [uv](https://docs.astral.sh/uv/)（パッケージマネージャー）
+- PNG / JPEG / WebP / TIFF / GIF / BMP / PDF / ICO / EPS など 24 以上のフォーマットに対応。
+- `pillow-heif` による HEIC/HEIF 形式もサポート。
+- 変換元・変換先の形式・画像サイズ・ファイルサイズを表示するサムネイルプレビュー。
+- アプリ上から変換後の画像に直接アクセス可能。
+- Windows / Mac OS / Linux で動作するクロスプラットフォーム対応。
 
 ## インストール
 
-### Windows
-
-```bash
-# uv のインストール（未インストールの場合）
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-
-# リポジトリのクローン
-git clone https://github.com/your-username/ImgConverterDesktop.git
-cd ImgConverterDesktop
-
-# 依存関係のインストール
-uv sync
-```
-
-### macOS
-
-```bash
-# uv のインストール（未インストールの場合）
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# リポジトリのクローン
-git clone https://github.com/your-username/ImgConverterDesktop.git
-cd ImgConverterDesktop
-
-# 依存関係のインストール
-uv sync
-```
-
-### Linux
-
-```bash
-# uv のインストール（未インストールの場合）
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# リポジトリのクローン
-git clone https://github.com/your-username/ImgConverterDesktop.git
-cd ImgConverterDesktop
-
-# 依存関係のインストール
-uv sync
-```
+1. [Releases](https://github.com/Yuulis/ImgConverterDesktop/releases) ページから、お使いのOSに適した最新のリリースを Zip 形式でダウンロード。
+2. ダウンロードした Zip ファイルを解凍し、生成されたフォルダ内の実行ファイル `imgconverterdesktop.exe` を起動。
 
 ## 使い方
 
-### 実行
+![起動後のアプリ画面](screenshots/main.png)
 
-```bash
-uv run flet run src/main.py
-```
-
-### ビルド（デスクトップアプリ）
-
-```bash
-# Windows
-uv run flet build windows -v
-
-# macOS
-uv run flet build macos -v
-
-# Linux
-uv run flet build linux -v
-```
-
-## 開発
-
-### テストの実行
-
-```bash
-uv run pytest -v
-```
-
-### リント & フォーマット
-
-```bash
-uv run ruff check .
-uv run ruff format .
-```
+1. まずは変換形式をプルダウンメニューから選択。
+2. 「Open File」ボタンを押して、変換したい画像ファイルを選択(複数選択可)。
+3. 画像選択後、自動的に変換が開始され、サムネイルプレビューに変換前・変換後の画像が表示されます。
+4. 「Open Output Folder」ボタンを押して、変換後の画像が保存されるフォルダにアクセス可能。
 
 ## プロジェクト構成
+
+このアプリは [Flet](https://flet.dev/) ライブラリを使用して作成されました。
 
 ```
 ImgConverterDesktop/
