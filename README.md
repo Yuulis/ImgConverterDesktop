@@ -33,25 +33,9 @@
 3. 画像選択後、自動的に変換が開始され、サムネイルプレビューに変換前・変換後の画像が表示されます。
 4. 「Open Output Folder」ボタンを押して、変換後の画像が保存されるフォルダにアクセス可能。
 
-## プロジェクト構成
+## プロジェクトについて
 
 このアプリは [Flet](https://flet.dev/) ライブラリを使用して作成されました。
-
-```
-ImgConverterDesktop/
-├── src/
-│   ├── main.py        # GUI エントリーポイント
-│   ├── utils.py       # 画像変換ロジック
-│   └── assets/
-│       └── icon.png   # アプリアイコン
-├── tests/
-│   ├── test_utils.py
-│   └── test_convert.py
-├── input/             # 変換元画像（自動生成）
-├── output/            # 変換後画像（自動生成）
-├── pyproject.toml
-└── LICENSE
-```
 
 ## ライセンス
 
