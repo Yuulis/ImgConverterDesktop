@@ -31,6 +31,7 @@ def app_settings(page, app_name, width, height):
     page.title = app_name
     page.window.width = width
     page.window.height = height
+    page.window.icon = "icon.ico"
 
 
 def build_heif_preview_base64(file_path: str) -> tuple[str, tuple[int, int]]:
