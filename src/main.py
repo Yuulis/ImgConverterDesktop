@@ -1,11 +1,14 @@
 import base64
 import asyncio
 import io
+import logging
 import os
 import flet as ft
 from PIL import Image
 import subprocess
 from utils import make_dirs, convert_image, format_bytes, load_heif_as_pil
+
+logger = logging.getLogger(__name__)
 
 APP_NAME = "ImgConverterDesktop"
 WINDOW_WIDTH = 800
@@ -28,6 +31,7 @@ def app_settings(page, app_name, width, height):
     page.title = app_name
     page.window.width = width
     page.window.height = height
+    page.window.icon = "icon.ico"
 
 
 def build_heif_preview_base64(file_path: str) -> tuple[str, tuple[int, int]]:
@@ -120,7 +124,6 @@ def main(page: ft.Page):
         autofocus=True,
         value="png",
         options=[
-            ft.dropdown.Option("blp"),
             ft.dropdown.Option("bmp"),
             ft.dropdown.Option("dds"),
             ft.dropdown.Option("dib"),
@@ -138,14 +141,11 @@ def main(page: ft.Page):
             ft.dropdown.Option("png"),
             ft.dropdown.Option("ppm"),
             ft.dropdown.Option("sgi"),
-            ft.dropdown.Option("spider"),
             ft.dropdown.Option("tga"),
             ft.dropdown.Option("tiff"),
             ft.dropdown.Option("webp"),
             ft.dropdown.Option("xbm"),
-            ft.dropdown.Option("palm"),
             ft.dropdown.Option("pdf"),
-            ft.dropdown.Option("xv"),
         ],
     )
 
@@ -180,6 +180,7 @@ def main(page: ft.Page):
                     width, height = im.size
                     src_fmt = im.format
             except Exception:
+                logger.exception("Failed to open image with Pillow: %s", file_path)
                 # Try HEIC size via pillow_heif as fallback
                 try:
                     preview_base64, (width, height) = build_heif_preview_base64(
@@ -187,6 +188,7 @@ def main(page: ft.Page):
                     )
                     src_fmt = "HEIC"
                 except Exception:
+                    logger.exception("Failed to open image as HEIC: %s", file_path)
                     loading_failed = True
 
             # File data size
@@ -234,6 +236,7 @@ def main(page: ft.Page):
                 refs["status_text"].value = "Success"
                 refs["status_text"].color = ft.Colors.GREEN_600
             except Exception:
+                logger.exception("Conversion failed: %s", file_path)
                 refs["status_text"].value = "Conversion Failed"
                 refs["status_text"].color = ft.Colors.RED_600
             finally:
