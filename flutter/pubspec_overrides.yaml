@@ -1,0 +1,4 @@
+dependency_overrides:
+  # connectivity_plus 7.1.1 uses NWPath.isUltraConstrained (macOS 26.0+ only),
+  # which fails to compile with Xcode 16.4 / macOS 15.5 SDK.
+  connectivity_plus: 7.0.0
