@@ -165,3 +165,7 @@ storage/
 # For this project
 input/
 output/
+
+# Claude Code / Codex personal settings (OSS public — do not commit)
+.claude/settings.json
+.claude/settings.local.json
