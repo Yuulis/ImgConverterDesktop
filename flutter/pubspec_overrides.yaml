@@ -1,3 +1,14 @@
+# NOTE: Flet's build system does NOT copy files from the project's flutter/
+# directory into the generated build/flutter/ project. This file is therefore
+# never applied during `flet build`.
+#
+# The actual dependency override is configured in pyproject.toml under:
+#   [tool.flet.flutter.pubspec.dependency_overrides]
+#   connectivity_plus = "7.0.0"
+#
+# That section is merged into the generated pubspec.yaml by flet_cli's
+# build_base.py via tool.flet.flutter.pubspec hook.
+
 dependency_overrides:
   # connectivity_plus 7.1.1 uses NWPath.isUltraConstrained (macOS 26.0+ only),
   # which fails to compile with Xcode 16.4 / macOS 15.5 SDK.

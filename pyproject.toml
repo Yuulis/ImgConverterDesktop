@@ -31,6 +31,12 @@ copyright = "Copyright (C) 2026 by Yuulis"
 [tool.flet.app]
 path = "src"
 
+# connectivity_plus 7.1.1 uses NWPath.isUltraConstrained (macOS 26.0+ only),
+# which fails to compile with Xcode 16.4 / macOS 15.5 SDK.
+# Flet does NOT read flutter/pubspec_overrides.yaml — this is the only hook.
+[tool.flet.flutter.pubspec.dependency_overrides]
+connectivity_plus = "7.0.0"
+
 [dependency-groups]
 dev = [
   "flet[all]==0.82.2",
