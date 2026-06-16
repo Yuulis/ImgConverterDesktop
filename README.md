@@ -1,10 +1,11 @@
 <h1 align="center">ImgConverterDesktop</h1>
 
 <p align="center">
-  <img alt="GitHub Release" src="https://img.shields.io/github/v/release/Yuulis/ImgConverterDesktop">
+  <img alt="GitHub Release" src="https://badgen.net/github/release/Yuulis/ImgConverterDesktop">
   <img alt="Python Version from PEP 621 TOML" src="https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2FYuulis%2FImgConverterDesktop%2Frefs%2Fheads%2Fmain%2Fpyproject.toml">
-  <img alt="GitHub License" src="https://img.shields.io/github/license/Yuulis/ImgConverterDesktop">
-  <img alt="GitHub Actions Workflow Status" src="https://img.shields.io/github/actions/workflow/status/Yuulis/ImgConverterDesktop/release-build.yml">
+  <img alt="Flet Version" src="https://img.shields.io/badge/Flet-0.82.2-blueviolet?logo=flutter&logoColor=white">
+  <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-green">
+  <img alt="GitHub Actions Workflow Status" src="https://badgen.net/github/checks/Yuulis/ImgConverterDesktop/main">
   <br>
   <img alt="Windows" src="https://img.shields.io/badge/Windows-0078D6?logo=windows&logoColor=white">
   <img alt="macOS" src="https://img.shields.io/badge/macOS-000000?logo=apple&logoColor=white">
