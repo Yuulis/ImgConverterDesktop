@@ -14,11 +14,13 @@
 
 <p align="center">シンプルなデスクトップ向け画像形式変換アプリケーション</p>
 
+![サムネイル](docs/thumbnail.jpg)
+
 ---
 
 ## 機能
 
-- PNG / JPEG / WebP / TIFF / GIF / BMP / PDF / ICO / EPS など 24 以上のフォーマットに対応
+- PNG / JPEG / WebP / TIFF / GIF / BMP / PDF / ICO / EPS など 20 以上のフォーマットに対応
 - `pillow-heif` による HEIC/HEIF 形式もサポート
 - 変換元・変換先の形式・画像サイズ・ファイルサイズを表示するサムネイルプレビュー
 - アプリ上から変換後の画像に直接アクセス可能
@@ -26,7 +28,7 @@
 
 ## スクリーンショット
 
-![メイン画面](screenshots/main.png)
+![メイン画面](docs/screenshots/main.png)
 
 ## インストール
 
